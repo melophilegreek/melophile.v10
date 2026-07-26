@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import {
   Play, Pause, SkipBack, SkipForward,
   Volume2, VolumeX, Shuffle, Music, Library, ListMusic,
-  Mic2, Moon, Check, Gauge,
+  Mic2, Moon, Check, MoreVertical, Gauge,
 } from 'lucide-react';
 import type { ShuffleMode, Song } from '../types';
 import { initialFor, placeholderBackground } from '../lib/artPlaceholder';
@@ -348,18 +348,18 @@ function PlaybackSpeedMenu({ accentColor, rate, preservePitch, onSetRate, onSetP
   );
 }
 
-// Feature (Combined options button): merges playback-speed and sleep-timer
-// controls into a single trigger button (using the moon icon) + one popover,
-// so the mobile expanded player shows exactly two icons — lyrics and this
-// one — matching the target design. Reuses the same portal/positioning
-// pattern as the other popovers here.
+// Feature (Combined options button): merges the lyrics, playback-speed, and
+// sleep-timer controls into a single trigger button + one popover, instead
+// of three separate icons crowding the top-right corner of the mobile
+// expanded player. Reuses the same portal/positioning pattern as the other
+// popovers here.
 function PlayerOptionsMenu({
-  accentColor,
+  accentColor, hasLyrics, hasSong, onOpenLyrics,
   rate, preservePitch, onSetRate, onSetPreservePitch,
   sleepEndsAt, sleepEndOfTrack, onSetSleepTimer,
   align,
 }: {
-  accentColor: string;
+  accentColor: string; hasLyrics: boolean; hasSong: boolean; onOpenLyrics: () => void;
   rate: number; preservePitch: boolean;
   onSetRate: (r: number) => void; onSetPreservePitch: (p: boolean) => void;
   sleepEndsAt: number | null; sleepEndOfTrack: boolean;
@@ -437,8 +437,8 @@ function PlayerOptionsMenu({
   return (
     <div className="relative">
       <button ref={btnRef} onClick={() => setOpen((v) => !v)}
-        className="btn-icon w-8 h-8 hover:bg-white/10 rounded-lg relative" title="Sleep timer & speed">
-        <Moon size={16} style={{ color: anyActive ? accentColor : 'rgba(255,255,255,0.6)' }} />
+        className="btn-icon w-8 h-8 hover:bg-white/10 rounded-lg relative" title="More options">
+        <MoreVertical size={16} style={{ color: anyActive ? accentColor : 'rgba(255,255,255,0.6)' }} />
         {anyActive && <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full" style={{ background: accentColor }} />}
       </button>
       {open && menuPos && createPortal(
@@ -446,6 +446,15 @@ function PlayerOptionsMenu({
           className="fixed w-56 rounded-xl overflow-hidden shadow-2xl border border-white/10 z-50 animate-fade-in max-h-[80vh] overflow-y-auto"
           style={{ top: menuPos.top, left: menuPos.left, background: 'linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0) 30%), rgba(22,22,25,0.96)', backdropFilter: 'blur(16px)' }}>
           <div className="p-1">
+            {/* Lyrics */}
+            <button onClick={() => { onOpenLyrics(); setOpen(false); }} disabled={!hasSong}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-white/75 hover:bg-white/10 transition-colors disabled:opacity-30 disabled:hover:bg-transparent">
+              <Mic2 size={14} />
+              {hasLyrics ? 'Lyrics' : 'Import lyrics'}
+            </button>
+
+            <div className="h-px bg-white/10 my-1" />
+
             {/* Playback speed */}
             <div className="px-3 pt-1.5 pb-1 flex items-center gap-1.5 text-xs text-white/40">
               <Gauge size={12} /> Playback speed
@@ -594,19 +603,12 @@ export function PlayerBar({
             ) : <p className="text-white/25 text-sm">Nothing playing</p>}
           </div>
           <div className="flex items-center gap-1 shrink-0">
-            {/* Feature (Lyrics import): stays enabled even with no lyrics yet
-                so tapping it opens the modal's "Import lyrics" prompt —
-                only disabled when nothing is loaded to attach lyrics to. */}
-            <button onClick={onOpenLyrics} disabled={!currentSong}
-              className="btn-icon w-8 h-8 disabled:opacity-30" title={hasLyrics ? 'Lyrics' : 'Import lyrics'}>
-              <Mic2 size={16} className="text-white/60" />
-            </button>
-            {/* Feature (Combined options button): playback speed + sleep
-                timer now live behind one moon-icon button instead of two
-                separate icons, so this row shows exactly two icons total
-                (lyrics + this one), matching the target design. */}
+            {/* Feature (Combined options button): lyrics + playback speed +
+                sleep timer now live behind one "more options" button instead
+                of three separate icons, matching the simplified top-right
+                corner of the mobile expanded player. */}
             <PlayerOptionsMenu
-              accentColor={accentColor}
+              accentColor={accentColor} hasLyrics={hasLyrics} hasSong={!!currentSong} onOpenLyrics={onOpenLyrics}
               rate={playbackRate} preservePitch={preservePitch} onSetRate={onSetPlaybackRate} onSetPreservePitch={onSetPreservePitch}
               sleepEndsAt={sleepTimerEndsAt} sleepEndOfTrack={sleepTimerEndOfTrack} onSetSleepTimer={onSetSleepTimer}
               align="left"
