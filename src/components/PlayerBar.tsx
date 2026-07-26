@@ -616,15 +616,10 @@ export function PlayerBar({
           </div>
         </div>
 
-        {/* Transport controls — shuffle, prev/play/next, and queue all sit
-            in one centered cluster with a single consistent gap between
-            them. (Previously shuffle/queue lived in separate 1fr grid
-            columns pinned to the row's outer edges, which centered
-            prev/play/next correctly but left a big dead gap between the
-            skip-forward button and the queue icon on anything narrower
-            than a very wide screen.) Shuffle and queue are both fixed
-            9x9 buttons, so this still centers prev/play/next visually. */}
-        <div className="flex items-center justify-center gap-4">
+        {/* Transport controls — shuffle and queue are pinned to the row's
+            outer edges, with prev/play/next centered as their own group
+            in the middle, spread across the full width of the bar. */}
+        <div className="flex items-center justify-between">
           <div ref={shuffleRef} className="relative">
             <button onClick={onShuffleToggle} onContextMenu={(e) => { e.preventDefault(); setShowShuffleMenu(true); }}
               className="w-9 h-9 flex items-center justify-center" title="Shuffle">
@@ -649,24 +644,26 @@ export function PlayerBar({
             )}
           </div>
 
-          <button onClick={onPrev} className="w-9 h-9 flex items-center justify-center text-white/70 active:scale-90 transition-transform" title="Previous">
-            <SkipBack size={22} fill="currentColor" />
-          </button>
-          <button onClick={onTogglePlay}
-            className="w-12 h-12 rounded-full flex items-center justify-center transition-all active:scale-90 hover:scale-[1.03]"
-            style={{ background: accentColor, boxShadow: `0 4px 16px -2px ${accentColor}66, 0 0 0 1px rgba(255,255,255,0.08) inset` }} title="Play/Pause">
-            {isLoading ? (
-              <div className="w-4 h-4 border-2 rounded-full animate-spin"
-                style={{ borderColor: `${onAccent}33`, borderTopColor: onAccent }} />
-            ) : isPlaying ? (
-              <Pause size={20} fill={onAccent} style={{ color: onAccent }} />
-            ) : (
-              <Play size={20} fill={onAccent} className="ml-0.5" style={{ color: onAccent }} />
-            )}
-          </button>
-          <button onClick={onNext} className="w-9 h-9 flex items-center justify-center text-white/70 active:scale-90 transition-transform" title="Next">
-            <SkipForward size={22} fill="currentColor" />
-          </button>
+          <div className="flex items-center gap-4">
+            <button onClick={onPrev} className="w-9 h-9 flex items-center justify-center text-white/70 active:scale-90 transition-transform" title="Previous">
+              <SkipBack size={22} fill="currentColor" />
+            </button>
+            <button onClick={onTogglePlay}
+              className="w-12 h-12 rounded-full flex items-center justify-center transition-all active:scale-90 hover:scale-[1.03]"
+              style={{ background: accentColor, boxShadow: `0 4px 16px -2px ${accentColor}66, 0 0 0 1px rgba(255,255,255,0.08) inset` }} title="Play/Pause">
+              {isLoading ? (
+                <div className="w-4 h-4 border-2 rounded-full animate-spin"
+                  style={{ borderColor: `${onAccent}33`, borderTopColor: onAccent }} />
+              ) : isPlaying ? (
+                <Pause size={20} fill={onAccent} style={{ color: onAccent }} />
+              ) : (
+                <Play size={20} fill={onAccent} className="ml-0.5" style={{ color: onAccent }} />
+              )}
+            </button>
+            <button onClick={onNext} className="w-9 h-9 flex items-center justify-center text-white/70 active:scale-90 transition-transform" title="Next">
+              <SkipForward size={22} fill="currentColor" />
+            </button>
+          </div>
 
           <button onClick={onOpenQueue} className="w-9 h-9 flex items-center justify-center relative" title="Queue">
             <ListMusic size={19} style={{ color: queueCount > 0 ? accentColor : 'rgba(255,255,255,0.45)' }} />
