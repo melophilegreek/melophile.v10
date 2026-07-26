@@ -582,6 +582,10 @@ export function PlayerBar({
           (h-[180px] md:h-[68px]) instead of the old fixed 68px on both
           breakpoints. */}
       <div className="md:hidden relative h-full flex flex-col justify-center gap-4 px-4 py-4">
+        {/* NOTE: the transport row and seek row below share a tighter gap-2
+            (see that row's `mt-2`, which overrides the gap-4 spacing from
+            this parent) so the play button doesn't float far above the
+            progress bar. */}
         {/* ALIGNMENT FIX: art + title/artist are left-aligned (not centered)
             — flex row starting at the container's left edge. */}
         <div className="flex items-center gap-3 min-w-0">
@@ -674,8 +678,11 @@ export function PlayerBar({
           </button>
         </div>
 
-        {/* Full seek row with time labels on both ends. */}
-        <div className="flex items-center gap-2">
+        {/* Full seek row with time labels on both ends. `-mt-3` cuts the
+            parent's gap-4 (16px) down to ~4px here specifically, so the
+            progress bar sits close under the play button instead of
+            floating with the same 16px gap used elsewhere in the card. */}
+        <div className="flex items-center gap-2 -mt-3">
           <span className="text-xs text-white/40 tabular-nums w-9">{formatTime(currentTime)}</span>
           <SeekBar progress={progress} duration={duration} accentColor={accentColor} onSeek={onSeek} />
           <span className="text-xs text-white/40 tabular-nums w-9 text-right">{formatTime(duration)}</span>
