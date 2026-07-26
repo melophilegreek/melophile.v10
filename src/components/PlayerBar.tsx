@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import {
   Play, Pause, SkipBack, SkipForward,
   Volume2, VolumeX, Shuffle, Music, Library, ListMusic,
-  Mic2, Moon, Check,
+  Mic2, Moon, Check, Gauge,
 } from 'lucide-react';
 import type { ShuffleMode, Song } from '../types';
 import { initialFor, placeholderBackground } from '../lib/artPlaceholder';
@@ -348,6 +348,162 @@ function PlaybackSpeedMenu({ accentColor, rate, preservePitch, onSetRate, onSetP
   );
 }
 
+// Feature (Combined options button): merges playback-speed and sleep-timer
+// controls into a single trigger button (using the moon icon) + one popover,
+// so the mobile expanded player shows exactly two icons — lyrics and this
+// one — matching the target design. Reuses the same portal/positioning
+// pattern as the other popovers here.
+function PlayerOptionsMenu({
+  accentColor,
+  rate, preservePitch, onSetRate, onSetPreservePitch,
+  sleepEndsAt, sleepEndOfTrack, onSetSleepTimer,
+  align,
+}: {
+  accentColor: string;
+  rate: number; preservePitch: boolean;
+  onSetRate: (r: number) => void; onSetPreservePitch: (p: boolean) => void;
+  sleepEndsAt: number | null; sleepEndOfTrack: boolean;
+  onSetSleepTimer: (minutes: number | 'end-of-track' | null) => void;
+  align: 'center' | 'left';
+}) {
+  const [open, setOpen] = useState(false);
+  const [remaining, setRemaining] = useState('');
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const speedActive = rate !== 1;
+  const sleepActive = sleepEndsAt !== null || sleepEndOfTrack;
+  const anyActive = speedActive || sleepActive;
+  const MENU_WIDTH = 224; // w-56
+  const MENU_HEIGHT_ESTIMATE = 420;
+
+  useEffect(() => {
+    if (!sleepEndsAt) { setRemaining(''); return; }
+    const tick = () => {
+      const ms = sleepEndsAt - Date.now();
+      if (ms <= 0) { setRemaining(''); return; }
+      const m = Math.floor(ms / 60000);
+      const s = Math.floor((ms % 60000) / 1000);
+      setRemaining(`${m}:${s.toString().padStart(2, '0')}`);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [sleepEndsAt]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (btnRef.current?.contains(target)) return;
+      if (menuRef.current && !menuRef.current.contains(target)) setOpen(false);
+    };
+    setTimeout(() => document.addEventListener('mousedown', handler), 0);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const reposition = () => {
+      const btn = btnRef.current;
+      if (!btn) return;
+      const rect = btn.getBoundingClientRect();
+      const left = align === 'center'
+        ? rect.left + rect.width / 2 - MENU_WIDTH / 2
+        : rect.right - MENU_WIDTH;
+      const clampedLeft = Math.max(8, Math.min(left, window.innerWidth - MENU_WIDTH - 8));
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      const openBelow = spaceBelow >= MENU_HEIGHT_ESTIMATE || spaceBelow >= spaceAbove;
+      const top = openBelow ? rect.bottom + 8 : Math.max(8, rect.top - MENU_HEIGHT_ESTIMATE - 8);
+      setMenuPos({ top, left: clampedLeft });
+    };
+    reposition();
+    window.addEventListener('resize', reposition);
+    window.addEventListener('scroll', reposition, true);
+    return () => {
+      window.removeEventListener('resize', reposition);
+      window.removeEventListener('scroll', reposition, true);
+    };
+  }, [open, align]);
+
+  const speedPresets = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+  const sleepOptions: { label: string; value: number | 'end-of-track' }[] = [
+    { label: '5 minutes', value: 5 }, { label: '15 minutes', value: 15 },
+    { label: '30 minutes', value: 30 }, { label: '60 minutes', value: 60 },
+    { label: 'End of track', value: 'end-of-track' },
+  ];
+
+  return (
+    <div className="relative">
+      <button ref={btnRef} onClick={() => setOpen((v) => !v)}
+        className="btn-icon w-8 h-8 hover:bg-white/10 rounded-lg relative" title="Sleep timer & speed">
+        <Moon size={16} style={{ color: anyActive ? accentColor : 'rgba(255,255,255,0.6)' }} />
+        {anyActive && <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full" style={{ background: accentColor }} />}
+      </button>
+      {open && menuPos && createPortal(
+        <div ref={menuRef}
+          className="fixed w-56 rounded-xl overflow-hidden shadow-2xl border border-white/10 z-50 animate-fade-in max-h-[80vh] overflow-y-auto"
+          style={{ top: menuPos.top, left: menuPos.left, background: 'linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0) 30%), rgba(22,22,25,0.96)', backdropFilter: 'blur(16px)' }}>
+          <div className="p-1">
+            {/* Playback speed */}
+            <div className="px-3 pt-1.5 pb-1 flex items-center gap-1.5 text-xs text-white/40">
+              <Gauge size={12} /> Playback speed
+            </div>
+            <div className="grid grid-cols-4 gap-1 px-2 pb-1.5">
+              {speedPresets.map((p) => (
+                <button key={p} onClick={() => onSetRate(p)}
+                  className="py-1.5 rounded-lg text-xs font-semibold tabular-nums transition-colors"
+                  style={{
+                    background: p === rate ? accentColor : 'rgba(255,255,255,0.06)',
+                    color: p === rate ? getContrastText(accentColor) : 'rgba(255,255,255,0.7)',
+                  }}>
+                  {p}&times;
+                </button>
+              ))}
+            </div>
+            <button onClick={() => onSetPreservePitch(!preservePitch)}
+              className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm text-white/75 hover:bg-white/10 transition-colors">
+              Preserve pitch
+              <span className="flex items-center gap-1.5">
+                <span className="text-[10px] font-semibold tabular-nums" style={{ color: preservePitch ? accentColor : 'rgba(255,255,255,0.35)' }}>
+                  {preservePitch ? 'On' : 'Off'}
+                </span>
+                <span className="w-8 h-4.5 rounded-full relative transition-colors shrink-0 border" style={{ background: preservePitch ? accentColor : 'rgba(255,255,255,0.08)', borderColor: preservePitch ? accentColor : 'rgba(255,255,255,0.25)' }}>
+                  <span className="absolute top-0.5 w-3.5 h-3.5 rounded-full transition-all" style={{ left: preservePitch ? 16 : 2, background: preservePitch ? '#fff' : 'rgba(255,255,255,0.85)' }} />
+                </span>
+              </span>
+            </button>
+
+            <div className="h-px bg-white/10 my-1" />
+
+            {/* Sleep timer */}
+            <div className="px-3 pt-1.5 pb-1 flex items-center justify-between text-xs text-white/40">
+              <span className="flex items-center gap-1.5"><Moon size={12} /> Sleep timer</span>
+              {remaining && <span>{remaining}</span>}
+            </div>
+            {sleepOptions.map((opt) => (
+              <button key={String(opt.value)} onClick={() => { onSetSleepTimer(opt.value); setOpen(false); }}
+                className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm transition-colors hover:bg-white/10"
+                style={{ color: (opt.value === 'end-of-track' ? sleepEndOfTrack : false) ? accentColor : 'rgba(255,255,255,0.75)' }}>
+                {opt.label}
+                {opt.value === 'end-of-track' && sleepEndOfTrack && <Check size={13} />}
+              </button>
+            ))}
+            {sleepActive && (
+              <button onClick={() => { onSetSleepTimer(null); setOpen(false); }}
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-colors mt-1">
+                Turn off sleep timer
+              </button>
+            )}
+          </div>
+        </div>,
+        document.body,
+      )}
+    </div>
+  );
+}
+
 export function PlayerBar({
   currentSong, artUrl, isPlaying, isLoading,
   currentTime, duration, volume, muted, shuffleMode, accentColor, queueCount,
@@ -445,8 +601,16 @@ export function PlayerBar({
               className="btn-icon w-8 h-8 disabled:opacity-30" title={hasLyrics ? 'Lyrics' : 'Import lyrics'}>
               <Mic2 size={16} className="text-white/60" />
             </button>
-            <PlaybackSpeedMenu accentColor={accentColor} rate={playbackRate} preservePitch={preservePitch} onSetRate={onSetPlaybackRate} onSetPreservePitch={onSetPreservePitch} align="left" />
-            <SleepTimerMenu accentColor={accentColor} endsAt={sleepTimerEndsAt} endOfTrack={sleepTimerEndOfTrack} onSet={onSetSleepTimer} align="left" />
+            {/* Feature (Combined options button): playback speed + sleep
+                timer now live behind one moon-icon button instead of two
+                separate icons, so this row shows exactly two icons total
+                (lyrics + this one), matching the target design. */}
+            <PlayerOptionsMenu
+              accentColor={accentColor}
+              rate={playbackRate} preservePitch={preservePitch} onSetRate={onSetPlaybackRate} onSetPreservePitch={onSetPreservePitch}
+              sleepEndsAt={sleepTimerEndsAt} sleepEndOfTrack={sleepTimerEndOfTrack} onSetSleepTimer={onSetSleepTimer}
+              align="left"
+            />
           </div>
         </div>
 
