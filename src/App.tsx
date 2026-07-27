@@ -1887,7 +1887,17 @@ export default function App() {
         />
       )}
       {showQueueModal && (
-        <div className="fixed inset-0 z-50 flex justify-end md:items-center md:justify-center"
+        // FIX (Now Playing bar disappearing behind the Queue): this overlay
+        // used to be `inset-0` (full viewport height on mobile), which sat
+        // on top of everything -- including the Player Bar -- since it's a
+        // `fixed` layer painted after it. The Player Bar reserves
+        // 176px + 8px bottom padding of real layout space (see the
+        // `h-[176px] ... pb-2` wrapper around <PlayerBar> below), matching
+        // `playerBarReservedHeight` used elsewhere for the same reason.
+        // Stopping the overlay (and therefore the panel inside it, via
+        // `h-full`) above that band leaves the Player Bar visible and
+        // tappable while the queue is open, instead of hiding it entirely.
+        <div className="fixed inset-x-0 top-0 bottom-[184px] md:inset-0 z-50 flex justify-end md:items-center md:justify-center"
           style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
           onMouseDown={(e) => { if (e.target === e.currentTarget) setShowQueueModal(false); }}>
           <div className="w-full max-w-sm h-full md:h-auto md:max-h-[80vh] animate-slide-in-right md:animate-slide-up"

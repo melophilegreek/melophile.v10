@@ -202,10 +202,14 @@ function SleepTimerMenu({ accentColor, endsAt, endOfTrack, onSet, align }: {
     };
     reposition();
     window.addEventListener('resize', reposition);
-    window.addEventListener('scroll', reposition, true);
+    // FIX (menu stuck open while the song list scrolls behind it): see the
+    // matching fix in PlayerOptionsMenu below — this button doesn't move
+    // when the list scrolls, so close the menu instead of repositioning it.
+    const scrollClose = () => setOpen(false);
+    window.addEventListener('scroll', scrollClose, true);
     return () => {
       window.removeEventListener('resize', reposition);
-      window.removeEventListener('scroll', reposition, true);
+      window.removeEventListener('scroll', scrollClose, true);
     };
   }, [open, align]);
 
@@ -298,10 +302,14 @@ function PlaybackSpeedMenu({ accentColor, rate, preservePitch, onSetRate, onSetP
     };
     reposition();
     window.addEventListener('resize', reposition);
-    window.addEventListener('scroll', reposition, true);
+    // FIX (menu stuck open while the song list scrolls behind it): see the
+    // matching fix in PlayerOptionsMenu below — this button doesn't move
+    // when the list scrolls, so close the menu instead of repositioning it.
+    const scrollClose = () => setOpen(false);
+    window.addEventListener('scroll', scrollClose, true);
     return () => {
       window.removeEventListener('resize', reposition);
-      window.removeEventListener('scroll', reposition, true);
+      window.removeEventListener('scroll', scrollClose, true);
     };
   }, [open, align]);
 
@@ -420,10 +428,20 @@ function PlayerOptionsMenu({
     };
     reposition();
     window.addEventListener('resize', reposition);
-    window.addEventListener('scroll', reposition, true);
+    // FIX (menu stuck open while the song list scrolls behind it): this
+    // button lives in the Player Bar, which doesn't move when the
+    // (virtualized) song list underneath is scrolled, so re-measuring the
+    // button's position on scroll was a no-op — the menu just sat there
+    // indefinitely, floating over whatever had scrolled into view. Scroll
+    // events don't bubble to a plain document listener, so listen in the
+    // capture phase (which does see scroll events from any descendant
+    // scrollable container) and close the menu as soon as scrolling starts,
+    // matching the fix already used for the track row's 3-dot menu.
+    const scrollClose = () => setOpen(false);
+    window.addEventListener('scroll', scrollClose, true);
     return () => {
       window.removeEventListener('resize', reposition);
-      window.removeEventListener('scroll', reposition, true);
+      window.removeEventListener('scroll', scrollClose, true);
     };
   }, [open, align]);
 
@@ -690,7 +708,22 @@ export function PlayerBar({
       </div>
 
       {/* ── DESKTOP LAYOUT (≥768px) ── */}
-      <div className="hidden md:flex relative h-full items-center px-4 gap-3">
+      {/* FIX (pause/play button off-center): this row had no
+          justify-content, so its default packing (flex-start) let the
+          three sections — left art/title (28%), center transport controls
+          (flex-1, capped at max-w-520px), right utility icons (28%) — bunch
+          together on the left whenever the window was wide enough that the
+          center block hit its 520px cap. Any space left over past that
+          point was stranded after the right icons instead of pushing them
+          to the edge, which visually dragged the whole middle+right
+          section (and therefore the play/pause button) left of true
+          center. Since the left and right blocks are equal width (28%
+          each), `justify-between` splits that leftover space evenly into
+          the two gaps around the center block — which lands the transport
+          controls exactly at the horizontal midpoint of the bar and pins
+          the right-side icons flush to the right edge, matching how
+          desktop music players are normally laid out. */}
+      <div className="hidden md:flex relative h-full items-center justify-between px-4 gap-3">
         {/* FIX 1 (SIZE) + FIX 2 (ALIGNMENT): fixed 48x48 art, row stays
             items-center (vertically centered), title/artist bumped up to
             14px/12px (from 13px/11px) now that the row has the height to

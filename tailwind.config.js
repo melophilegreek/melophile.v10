@@ -36,5 +36,22 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    // FIX (song row / 3-dot menu stuck "highlighted" after tap+scroll):
+    // Tailwind's default `hover:` and `group-hover:` compile to plain
+    // `:hover`, which touchscreens set on tap and never clear (there's no
+    // mouse to move away and fire the un-hover). That left the row darkened,
+    // the index swapped for the play icon, and the 3-dot button's circular
+    // background all stuck on whatever row was last tapped, even after
+    // scrolling elsewhere. Redefining both variants to only match on
+    // devices that report an actual hover-capable, fine pointer (a mouse)
+    // means touch taps never trigger `:hover` in the first place, while
+    // desktop mouse users keep the normal hover feedback. This is a single
+    // global fix rather than patching every `hover:`/`group-hover:` class
+    // site individually.
+    function ({ addVariant }) {
+      addVariant('hover', '@media (hover: hover) and (pointer: fine) { &:hover }');
+      addVariant('group-hover', '@media (hover: hover) and (pointer: fine) { :merge(.group):hover & }');
+    },
+  ],
 };
