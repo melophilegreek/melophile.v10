@@ -107,9 +107,14 @@ input[type='range']:focus { outline: none; }
    its correct centered position once the 300ms animation finished and the
    static utility class took back over. This dedicated keyframe bakes the
    -50% horizontal centering into every frame of the animation itself, so
-   the toast only ever moves vertically, never sideways. Scoped to just the
-   toast so the plain `.animate-slide-up` used by every modal (which don't
-   need horizontal centering baked in) stays untouched.
+   the toast only ever moves vertically, never sideways. The static
+   `-translate-x-1/2` class on the element (in App.tsx) is still needed
+   as the resting-state baseline: once the animation finishes, the
+   element's transform falls back to whatever its own classes provide, so
+   that baseline must also equal translate(-50%, 0) or the toast will jump
+   off-center right after landing. Scoped to just the toast so the plain
+   `.animate-slide-up` used by every modal (which don't need horizontal
+   centering baked in) stays untouched.
 */
 @keyframes toastSlideUp { from { opacity: 0; transform: translate(-50%, 12px); } to { opacity: 1; transform: translate(-50%, 0); } }
 .animate-fade-in { animation: fadeIn 0.25s ease-out; }
