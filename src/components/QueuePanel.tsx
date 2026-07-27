@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Trash2, Play, ListMusic, ChevronUp, ChevronDown, GripVertical, ListPlus } from 'lucide-react';
+import { X, Trash2, Play, Pause, ListMusic, ChevronUp, ChevronDown, GripVertical, ListPlus } from 'lucide-react';
 import type { Song } from '../types';
 import { getArtUrl, useAlbumArtError } from './SongRow';
 import { initialFor, placeholderBackground } from '../lib/artPlaceholder';
@@ -24,6 +24,14 @@ interface Props {
   queue: Song[];
   userQueueLen: number;
   currentSong: Song | null;
+  // BUG FIX (Now Playing row in the Queue always showed a Play triangle):
+  // this row previously had no idea whether playback was actually playing
+  // or paused -- `isPlaying` was never threaded down to it -- so it always
+  // rendered a static Play icon even while a song was actively playing.
+  // Passed through now so the icon (and tapping the row) matches real
+  // playback state, same as the Player Bar.
+  isPlaying: boolean;
+  onTogglePlay: () => void;
   accentColor: string;
   onClose: () => void;
   // BUG FIX (duplicates in queue): both callbacks now take the row's index
@@ -43,7 +51,7 @@ interface Props {
   onQueueSong: (song: Song) => void;
 }
 
-export function QueuePanel({ queue, userQueueLen, currentSong, accentColor, onClose, onPlayFromQueue, onRemoveFromQueue, onReorderQueue, onClearQueue, onQueueSong }: Props) {
+export function QueuePanel({ queue, userQueueLen, currentSong, isPlaying, onTogglePlay, accentColor, onClose, onPlayFromQueue, onRemoveFromQueue, onReorderQueue, onClearQueue, onQueueSong }: Props) {
   const ref = useRef<HTMLDivElement>(null);
 
   // Feature (Drag-to-reorder queue): pointer-based dragging (works for both
@@ -135,7 +143,7 @@ export function QueuePanel({ queue, userQueueLen, currentSong, accentColor, onCl
       {currentSong && (
         <div className="px-4 py-3 shrink-0">
           <p className="text-xs text-white/30 uppercase tracking-wider font-semibold mb-2">Now Playing</p>
-          <QueueRow song={currentSong} isCurrent accentColor={accentColor} onPlay={() => {}} />
+          <QueueRow song={currentSong} isCurrent isPlaying={isPlaying} accentColor={accentColor} onPlay={onTogglePlay} />
         </div>
       )}
 
@@ -182,8 +190,8 @@ export function QueuePanel({ queue, userQueueLen, currentSong, accentColor, onCl
   );
 }
 
-function QueueRow({ song, isCurrent, accentColor, onPlay, onRemove, onMoveUp, onMoveDown, onGripPointerDown, onQueueSong, isDragging, isDropTarget, index, isAutoQueued }: {
-  song: Song; isCurrent?: boolean; accentColor: string;
+function QueueRow({ song, isCurrent, isPlaying, accentColor, onPlay, onRemove, onMoveUp, onMoveDown, onGripPointerDown, onQueueSong, isDragging, isDropTarget, index, isAutoQueued }: {
+  song: Song; isCurrent?: boolean; isPlaying?: boolean; accentColor: string;
   onPlay: () => void; onRemove?: () => void;
   onMoveUp?: () => void; onMoveDown?: () => void;
   onGripPointerDown?: (e: React.PointerEvent) => void;
@@ -298,7 +306,11 @@ function QueueRow({ song, isCurrent, accentColor, onPlay, onRemove, onMoveUp, on
           </div>
         )}
 
-        {isCurrent && <Play size={14} fill={accentColor} style={{ color: accentColor }} className="shrink-0" />}
+        {isCurrent && (
+          isPlaying
+            ? <Pause size={14} fill={accentColor} style={{ color: accentColor }} className="shrink-0" />
+            : <Play size={14} fill={accentColor} style={{ color: accentColor }} className="shrink-0" />
+        )}
 
         {/* Remove button */}
         {onRemove && !isCurrent && (

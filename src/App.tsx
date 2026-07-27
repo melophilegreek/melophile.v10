@@ -113,7 +113,7 @@ function Toast({ message, accentColor }: { message: string; accentColor: string 
     // glowing accent-colored indicator dot, and an accent-tinted outer glow
     // (in addition to the drop shadow) so it reads as a deliberate status
     // message instead of a barely-there caption.
-    <div className="fixed bottom-[192px] md:bottom-24 left-1/2 -translate-x-1/2 z-50 animate-slide-up flex items-center gap-2.5"
+    <div className="fixed bottom-[192px] md:bottom-24 left-1/2 z-50 animate-toast-slide-up flex items-center gap-2.5"
       style={{
         background: 'linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0) 30%), rgba(24,24,28,0.97)',
         backdropFilter: 'blur(18px)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 999,
@@ -1533,6 +1533,8 @@ export default function App() {
                 queue={upcomingSongs}
                 userQueueLen={userQueueLen}
                 currentSong={playerState.currentSong}
+                isPlaying={playerState.isPlaying}
+                onTogglePlay={player.togglePlay}
                 accentColor={accentColor}
                 onClose={() => setView('library')}
                 onPlayFromQueue={handlePlayFromQueue}
@@ -1906,6 +1908,8 @@ export default function App() {
               queue={upcomingSongs}
               userQueueLen={userQueueLen}
               currentSong={playerState.currentSong}
+              isPlaying={playerState.isPlaying}
+              onTogglePlay={() => player.togglePlay()}
               accentColor={accentColor}
               onClose={() => setShowQueueModal(false)}
               onPlayFromQueue={handlePlayFromQueue}

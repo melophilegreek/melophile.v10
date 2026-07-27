@@ -95,8 +95,26 @@ input[type='range']:focus { outline: none; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes slideInRight { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
+/* FIX (like/unlike toast sliding in from the right instead of straight up):
+   the Toast in App.tsx is horizontally centered with a static
+   `-translate-x-1/2` Tailwind class, but it also used the shared
+   `.animate-slide-up` animation above, whose keyframes set `transform:
+   translateY(...)`. A CSS animation's `transform` property completely
+   replaces any other transform on the element for the animation's
+   duration -- it doesn't compose with the static -translate-x-1/2 --  so
+   while the animation played, the toast's left edge (not its center) sat
+   at the 50% mark, making it appear off to the right; it only snapped to
+   its correct centered position once the 300ms animation finished and the
+   static utility class took back over. This dedicated keyframe bakes the
+   -50% horizontal centering into every frame of the animation itself, so
+   the toast only ever moves vertically, never sideways. Scoped to just the
+   toast so the plain `.animate-slide-up` used by every modal (which don't
+   need horizontal centering baked in) stays untouched.
+*/
+@keyframes toastSlideUp { from { opacity: 0; transform: translate(-50%, 12px); } to { opacity: 1; transform: translate(-50%, 0); } }
 .animate-fade-in { animation: fadeIn 0.25s ease-out; }
 .animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.16,1,0.3,1); }
+.animate-toast-slide-up { animation: toastSlideUp 0.3s cubic-bezier(0.16,1,0.3,1); }
 .animate-slide-in-right { animation: slideInRight 0.3s cubic-bezier(0.16,1,0.3,1); }
 
 /* FIX 3 (LONG SONG NAMES): base marquee keyframe used by MarqueeText in
