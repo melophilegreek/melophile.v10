@@ -140,7 +140,7 @@ export function LyricsModal({ song, currentTime, accentColor, onClose, onSeek, o
         </div>
 
         {editing ? (
-          <div className="flex-1 min-h-0 flex flex-col gap-3">
+          <div className="flex-1 min-h-0 flex flex-col gap-3 pb-[184px] md:pb-0">
             <p className="text-white/40 text-xs leading-relaxed shrink-0">
               Paste lyrics below, or upload a .lrc / .txt file. Lines with timestamps like{' '}
               <span className="text-white/60 font-mono">[00:12.34]</span> sync automatically to playback.
