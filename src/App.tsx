@@ -1916,15 +1916,21 @@ export default function App() {
         <div className="fixed inset-0 z-50 flex justify-end md:items-center md:justify-center"
           style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
           onMouseDown={(e) => { if (e.target === e.currentTarget) setShowQueueModal(false); }}>
-          {/* FIX (Queue's own last rows hidden under the Player Bar): now that
-              the Player Bar renders above this overlay (z-[60] vs this
-              overlay's z-50, see the comment above) to fix the corner-peek
-              bug, its opaque card would otherwise sit on top of -- and hide
-              -- whatever part of the Queue's own list scrolled underneath
-              it. Capping this panel's height on mobile to stop 184px above
-              the bottom (matching the Player Bar's reserved space) keeps its
-              list fully visible above the bar instead of running behind it. */}
-          <div className="w-full max-w-sm h-[calc(100%-184px)] self-start md:h-auto md:self-auto md:max-h-[80vh] animate-slide-in-right md:animate-slide-up"
+          {/* FIX (mismatched "different black" band around the Player Bar):
+              this panel previously stopped 184px short of the bottom so the
+              Player Bar (which sits above this overlay via z-[60]) wouldn't
+              be covered by it. But that left the *outer* overlay's lighter,
+              more transparent backdrop (rgba(0,0,0,0.5)) exposed behind/
+              around the bar instead of this panel's own much darker, more
+              opaque background (rgba(16,16,19,0.96)) -- the two don't
+              match, so it looked like a distinct lighter strip or "seam"
+              right where the panel's shorter height cut off. Letting this
+              panel go back to full height means its own solid dark
+              background extends behind the Player Bar too (no visible
+              seam); the list's own bottom padding (see the `pb-[184px]`
+              added inside QueuePanel) keeps its rows from being visually
+              hidden under the bar instead. */}
+          <div className="w-full max-w-sm h-full animate-slide-in-right md:animate-slide-up md:h-auto md:max-h-[80vh]"
             style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0) 30%), rgba(16,16,19,0.96)', backdropFilter: 'blur(20px)', borderLeft: '1px solid rgba(255,255,255,0.1)', maxWidth: '480px' }}>
             <QueuePanel
               queue={upcomingSongs}

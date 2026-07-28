@@ -156,7 +156,7 @@ export function QueuePanel({ queue, userQueueLen, currentSong, isPlaying, onTogg
         </div>
       ) : (
         <VirtualList
-          className="flex-1 px-4 pb-6"
+          className="flex-1 px-4 pb-[184px] md:pb-6"
           items={rows}
           getItemHeight={(row) => row.kind === 'header' ? HEADER_HEIGHT : QUEUE_ROW_HEIGHT}
           renderItem={(row) => {
