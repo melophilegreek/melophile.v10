@@ -104,10 +104,23 @@ export function LyricsModal({ song, currentTime, accentColor, onClose, onSeek, o
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4"
+    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center md:px-4"
       style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}
       onMouseDown={(e) => { if (e.currentTarget === e.target) onClose(); }}>
-      <div className="w-full max-w-md h-[70vh] rounded-2xl p-5 shadow-2xl animate-slide-up flex flex-col"
+      {/* FIX ("different black" seam above the Player Bar): this card used
+          to be a small floating box (`h-[70vh]`, centered) on every screen
+          size. On mobile, that left real empty space between the card's
+          bottom edge and the screen edge -- and since the Player Bar
+          renders above this overlay (z-[60] vs this overlay's z-50) to stay
+          usable, that empty space (and the area behind the bar's rounded
+          corners) showed this overlay's own lighter backdrop instead of the
+          card's much darker background, creating a visible seam. Matching
+          the fix already applied to the Queue panel: go edge-to-edge/full
+          height on mobile so the card's own dark background extends all
+          the way down behind the Player Bar, and keep the original smaller
+          centered floating card only on desktop, where there's no such
+          overlap to worry about. */}
+      <div className="w-full h-full md:h-[70vh] md:max-w-md md:rounded-2xl rounded-t-2xl p-5 shadow-2xl animate-slide-up flex flex-col"
         style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0) 30%), rgba(18,18,21,0.96)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }}>
         <div className="flex items-start justify-between mb-3 shrink-0">
           <div className="min-w-0">
@@ -174,7 +187,7 @@ export function LyricsModal({ song, currentTime, accentColor, onClose, onSeek, o
             </button>
           </div>
         ) : isLrc && lrcLines.length > 0 ? (
-          <div ref={scrollAreaRef} className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1 space-y-3 py-8">
+          <div ref={scrollAreaRef} className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1 space-y-3 py-8 pb-[184px] md:pb-8">
             {lrcLines.map((line, i) => (
               <p key={i} ref={i === activeIndex ? activeRef : undefined}
                 onClick={() => onSeek(line.time)}
@@ -189,7 +202,7 @@ export function LyricsModal({ song, currentTime, accentColor, onClose, onSeek, o
             ))}
           </div>
         ) : (
-          <div className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1">
+          <div className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1 pb-[184px] md:pb-0">
             <p className="text-white/80 text-sm leading-relaxed whitespace-pre-wrap">{localSong.lyrics}</p>
           </div>
         )}
