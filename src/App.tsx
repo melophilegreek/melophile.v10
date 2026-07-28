@@ -1723,8 +1723,6 @@ export default function App() {
             onMute={() => player.setMuted(!playerState.muted)}
             onShuffleToggle={handleShuffleToggle}
             onShuffleModeChange={(mode) => player.setShuffle(mode)}
-            repeatMode={playerState.repeat}
-            onSetRepeat={(mode) => player.setRepeat(mode)}
             onOpenQueue={() => setShowQueueModal(true)}
             hasLyrics={!!playerState.currentSong?.lyrics}
             onOpenLyrics={() => setShowLyrics(true)}
