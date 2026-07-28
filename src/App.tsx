@@ -1695,7 +1695,14 @@ export default function App() {
         {/* Mobile now uses a taller 3-row expanded layout (art+title / transport
             controls / seek row), so it needs more vertical room than desktop's
             compact single-row 68px bar. */}
-        <div className="h-[176px] md:h-[68px] shrink-0 px-2 pb-2">
+        {/* FIX (library rows peeking through the Player Bar's rounded corners
+            while the Queue was open): `relative z-[60]` lifts this above the
+            Queue overlay's `z-50` backdrop (see the comment on that overlay
+            below for the full story), so the bar keeps rendering on top --
+            visible and tappable -- while the overlay's dark/blurred backdrop
+            fills in uniformly behind the bar's rounded corners instead of the
+            library view showing through them. */}
+        <div className="relative z-[60] h-[176px] md:h-[68px] shrink-0 px-2 pb-2">
           <PlayerBar
             currentSong={playerState.currentSong}
             artUrl={artUrl}
@@ -1889,20 +1896,35 @@ export default function App() {
         />
       )}
       {showQueueModal && (
-        // FIX (Now Playing bar disappearing behind the Queue): this overlay
-        // used to be `inset-0` (full viewport height on mobile), which sat
-        // on top of everything -- including the Player Bar -- since it's a
-        // `fixed` layer painted after it. The Player Bar reserves
-        // 176px + 8px bottom padding of real layout space (see the
-        // `h-[176px] ... pb-2` wrapper around <PlayerBar> below), matching
-        // `playerBarReservedHeight` used elsewhere for the same reason.
-        // Stopping the overlay (and therefore the panel inside it, via
-        // `h-full`) above that band leaves the Player Bar visible and
-        // tappable while the queue is open, instead of hiding it entirely.
-        <div className="fixed inset-x-0 top-0 bottom-[184px] md:inset-0 z-50 flex justify-end md:items-center md:justify-center"
+        // FIX (library rows peeking through the Player Bar's rounded
+        // corners while the Queue was open): the previous version of this
+        // fix stopped the overlay short of the Player Bar's strip
+        // (`bottom-[184px]`) so the bar wouldn't be hidden entirely. But
+        // that left that strip uncovered by anything -- the app's library
+        // view is always mounted underneath (the Queue is just an overlay
+        // on top of it, not a replacement for it), so wherever the Player
+        // Bar's rounded card doesn't reach a full rectangle (its own
+        // rounded-2xl corners), tiny slivers of the raw library rows
+        // (their heart/3-dot icons) showed through those corner gaps.
+        // Covering the full screen uniformly here (back to `inset-0`)
+        // means there's a consistent dark/blurred backdrop behind the
+        // Player Bar's corners instead of the library peeking through.
+        // The Player Bar still needs to render *above* this overlay to
+        // stay visible/tappable -- that's handled by giving its wrapper a
+        // higher z-index below, rather than by carving a hole in the
+        // overlay.
+        <div className="fixed inset-0 z-50 flex justify-end md:items-center md:justify-center"
           style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
           onMouseDown={(e) => { if (e.target === e.currentTarget) setShowQueueModal(false); }}>
-          <div className="w-full max-w-sm h-full md:h-auto md:max-h-[80vh] animate-slide-in-right md:animate-slide-up"
+          {/* FIX (Queue's own last rows hidden under the Player Bar): now that
+              the Player Bar renders above this overlay (z-[60] vs this
+              overlay's z-50, see the comment above) to fix the corner-peek
+              bug, its opaque card would otherwise sit on top of -- and hide
+              -- whatever part of the Queue's own list scrolled underneath
+              it. Capping this panel's height on mobile to stop 184px above
+              the bottom (matching the Player Bar's reserved space) keeps its
+              list fully visible above the bar instead of running behind it. */}
+          <div className="w-full max-w-sm h-[calc(100%-184px)] self-start md:h-auto md:self-auto md:max-h-[80vh] animate-slide-in-right md:animate-slide-up"
             style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0) 30%), rgba(16,16,19,0.96)', backdropFilter: 'blur(20px)', borderLeft: '1px solid rgba(255,255,255,0.1)', maxWidth: '480px' }}>
             <QueuePanel
               queue={upcomingSongs}

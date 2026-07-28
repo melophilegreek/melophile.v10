@@ -168,6 +168,11 @@ class Player {
     const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     const ctx = new Ctx();
     this.ctx = ctx;
+    // FIX (audio breaking up while backgrounded): fires the moment the
+    // browser flips this context to 'suspended' -- see the extended
+    // comment on _wireBackgroundResume for why this matters -- so playback
+    // recovers essentially instantly instead of waiting on the fallback poll.
+    ctx.onstatechange = () => this._resumeIfNeeded?.();
     const filters = EQ_BANDS.map((band) => {
       const f = ctx.createBiquadFilter();
       f.type = band.type;
@@ -752,13 +757,21 @@ class Player {
   // routinely suspend an AudioContext when the tab is backgrounded or the
   // screen locks -- `audio.play()` still reports "playing" and MediaSession
   // still shows lock-screen controls, but the graph feeding the speakers is
-  // silenced. There's no event that unambiguously fires the instant this
-  // happens, so this covers it from both ends: resume on every visibility/
-  // focus/pageshow transition back to the foreground (catches the common
-  // "locked the screen, came back" case immediately), and a low-frequency
-  // background poll (catches a mid-session suspension that happens while
-  // still nominally foregrounded, e.g. Android deciding a hidden PWA
-  // window is idle) without constantly waking the CPU.
+  // silenced.
+  //
+  // FIX (audio breaking up while backgrounded): this used to rely only on
+  // resuming on visibility/focus/pageshow transitions back to the
+  // foreground (which only fires *after* returning) plus a 15-second
+  // background poll as a safety net for suspension that happens mid-session
+  // while still backgrounded. That poll interval meant up to 15 seconds of
+  // silence/glitching every time the browser suspended the context before
+  // it self-healed -- which is exactly the "sometimes the audio breaks in
+  // the background" symptom. `AudioContext` actually does fire a
+  // `statechange` event the moment its state flips to 'suspended', so
+  // listening for that gives near-instant recovery instead of waiting on a
+  // timer. The poll stays too, but only as a much tighter fallback (2s
+  // instead of 15s) in case `statechange` doesn't fire reliably in every
+  // browser.
   private _wireBackgroundResume() {
     if (typeof document === 'undefined') return;
     const resumeIfNeeded = () => {
@@ -769,8 +782,14 @@ class Player {
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') resumeIfNeeded(); });
     window.addEventListener('focus', resumeIfNeeded);
     window.addEventListener('pageshow', resumeIfNeeded);
-    setInterval(resumeIfNeeded, 15000);
+    setInterval(resumeIfNeeded, 2000);
+    this._resumeIfNeeded = resumeIfNeeded;
   }
+
+  // Hooked onto ctx.onstatechange as soon as the AudioContext exists (see
+  // _ensureAudioGraph) so a suspension is caught the instant it's reported,
+  // rather than waiting for the next poll tick or a foreground transition.
+  private _resumeIfNeeded: (() => void) | null = null;
 
   private _updateMediaSessionMetadata(song: Song) {
     if (typeof navigator === 'undefined' || !('mediaSession' in navigator)) return;
