@@ -2,7 +2,7 @@ import { openDB as idbOpen, type IDBPDatabase } from 'idb';
 import type { Song, Playlist, Preferences, HistoryEntry } from '../types';
 import { DEFAULT_ACCENT } from '../types';
 import type { FSDirectoryHandle } from './fsAccess';
-import { EQ_FLAT } from './eqPresets';
+import { migrateEQ } from './eqPresets';
 
 interface MelophileDB {
   songs: { key: string; value: Song };
@@ -173,7 +173,12 @@ export async function getPreferences(): Promise<Preferences> {
   return {
     accentColor: (color as string | undefined) ?? DEFAULT_ACCENT,
     crossfadeSeconds: (crossfade as number | undefined) ?? 0,
-    eq: (eq as Preferences['eq'] | undefined) ?? EQ_FLAT,
+    // FIX (10-band EQ upgrade): route through migrateEQ rather than a plain
+    // `?? EQ_FLAT` fallback, so a pre-upgrade 5-band save gets carried
+    // forward onto the new bands instead of just being discarded wholesale
+    // -- see the extended comment on migrateEQ for why a straight pass-
+    // through would have silently broken the whole EQ graph.
+    eq: migrateEQ(eq as Record<string, number> | undefined),
     sortBy: (sortBy as Preferences['sortBy'] | undefined) ?? 'title',
     sortDir: (sortDir as Preferences['sortDir'] | undefined) ?? 'asc',
     playbackRate: (playbackRate as number | undefined) ?? 1,

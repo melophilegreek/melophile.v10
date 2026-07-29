@@ -3,9 +3,9 @@ import { createPortal } from 'react-dom';
 import {
   Play, Pause, SkipBack, SkipForward,
   Volume2, VolumeX, Shuffle, Music, Library, ListMusic,
-  Mic2, Moon, Check, MoreVertical, Gauge,
+  Mic2, Moon, Check, MoreVertical, Gauge, Repeat, Repeat1,
 } from 'lucide-react';
-import type { ShuffleMode, Song } from '../types';
+import type { ShuffleMode, Song, RepeatMode } from '../types';
 import { initialFor, placeholderBackground } from '../lib/artPlaceholder';
 import { getContrastText } from '../lib/color';
 import { SeekBar } from './SeekBar';
@@ -122,6 +122,9 @@ interface Props {
   sleepTimerEndsAt: number | null;
   sleepTimerEndOfTrack: boolean;
   onSetSleepTimer: (minutes: number | 'end-of-track' | null) => void;
+  /** Feature (Repeat button) */
+  repeat: RepeatMode;
+  onRepeatChange: (mode: RepeatMode) => void;
   /** Feature (Speed/pitch control) */
   playbackRate: number;
   preservePitch: boolean;
@@ -365,6 +368,7 @@ function PlayerOptionsMenu({
   accentColor, hasLyrics, hasSong, onOpenLyrics,
   rate, preservePitch, onSetRate, onSetPreservePitch,
   sleepEndsAt, sleepEndOfTrack, onSetSleepTimer,
+  repeat, onRepeatChange,
   align,
 }: {
   accentColor: string; hasLyrics: boolean; hasSong: boolean; onOpenLyrics: () => void;
@@ -372,6 +376,7 @@ function PlayerOptionsMenu({
   onSetRate: (r: number) => void; onSetPreservePitch: (p: boolean) => void;
   sleepEndsAt: number | null; sleepEndOfTrack: boolean;
   onSetSleepTimer: (minutes: number | 'end-of-track' | null) => void;
+  repeat: RepeatMode; onRepeatChange: (mode: RepeatMode) => void;
   align: 'center' | 'left';
 }) {
   const [open, setOpen] = useState(false);
@@ -381,7 +386,13 @@ function PlayerOptionsMenu({
   const menuRef = useRef<HTMLDivElement>(null);
   const speedActive = rate !== 1;
   const sleepActive = sleepEndsAt !== null || sleepEndOfTrack;
-  const anyActive = speedActive || sleepActive;
+  // Feature (Repeat button): folded into "any option active" so the 3-dot
+  // trigger's accent-colored dot (see the button below) also lights up when
+  // repeat is on, same as it already does for speed/sleep -- a quick visual
+  // reminder that *something* in this menu is set to non-default without
+  // having to open it.
+  const repeatActive = repeat !== 'off';
+  const anyActive = speedActive || sleepActive || repeatActive;
   const MENU_WIDTH = 224; // w-56
   const MENU_HEIGHT_ESTIMATE = 420;
 
@@ -473,6 +484,46 @@ function PlayerOptionsMenu({
 
             <div className="h-px bg-white/10 my-1" />
 
+            {/* Feature (Repeat button): the repeat engine (off/all/one,
+                including the actual next/prev-track cycling logic) already
+                existed in player.ts -- it just had no button anywhere to
+                turn it on. Segmented 3-way control here mirrors the
+                Playback speed row's style/pattern below for a consistent
+                look, and is more discoverable in a text-labeled menu list
+                than a single icon that silently cycles through states would
+                be. */}
+            <div className="px-3 pt-1.5 pb-1 flex items-center gap-1.5 text-xs text-white/40">
+              <Repeat size={12} /> Repeat
+            </div>
+            <div className="grid grid-cols-3 gap-1 px-2 pb-1.5">
+              <button onClick={() => onRepeatChange('off')}
+                className="py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                style={{
+                  background: repeat === 'off' ? accentColor : 'rgba(255,255,255,0.06)',
+                  color: repeat === 'off' ? getContrastText(accentColor) : 'rgba(255,255,255,0.7)',
+                }}>
+                Off
+              </button>
+              <button onClick={() => onRepeatChange('all')}
+                className="py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center justify-center gap-1"
+                style={{
+                  background: repeat === 'all' ? accentColor : 'rgba(255,255,255,0.06)',
+                  color: repeat === 'all' ? getContrastText(accentColor) : 'rgba(255,255,255,0.7)',
+                }}>
+                <Repeat size={12} /> All
+              </button>
+              <button onClick={() => onRepeatChange('one')}
+                className="py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center justify-center gap-1"
+                style={{
+                  background: repeat === 'one' ? accentColor : 'rgba(255,255,255,0.06)',
+                  color: repeat === 'one' ? getContrastText(accentColor) : 'rgba(255,255,255,0.7)',
+                }}>
+                <Repeat1 size={12} /> One
+              </button>
+            </div>
+
+            <div className="h-px bg-white/10 my-1" />
+
             {/* Playback speed */}
             <div className="px-3 pt-1.5 pb-1 flex items-center gap-1.5 text-xs text-white/40">
               <Gauge size={12} /> Playback speed
@@ -537,6 +588,7 @@ export function PlayerBar({
   onPrev, onNext, onTogglePlay, onSeek, onVolume, onMute,
   onShuffleToggle, onShuffleModeChange, onOpenQueue,
   hasLyrics, onOpenLyrics, sleepTimerEndsAt, sleepTimerEndOfTrack, onSetSleepTimer,
+  repeat, onRepeatChange,
   playbackRate, preservePitch, onSetPlaybackRate, onSetPreservePitch,
 }: Props) {
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
@@ -633,6 +685,7 @@ export function PlayerBar({
               accentColor={accentColor} hasLyrics={hasLyrics} hasSong={!!currentSong} onOpenLyrics={onOpenLyrics}
               rate={playbackRate} preservePitch={preservePitch} onSetRate={onSetPlaybackRate} onSetPreservePitch={onSetPreservePitch}
               sleepEndsAt={sleepTimerEndsAt} sleepEndOfTrack={sleepTimerEndOfTrack} onSetSleepTimer={onSetSleepTimer}
+              repeat={repeat} onRepeatChange={onRepeatChange}
               align="left"
             />
           </div>

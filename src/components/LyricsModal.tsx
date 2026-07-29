@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { X, Mic2, Upload, Pencil, Trash2, Loader as Loader2 } from 'lucide-react';
+import { X, Mic2, Upload, Pencil, Trash2, Loader as Loader2, Search } from 'lucide-react';
 import type { Song } from '../types';
 import { saveSong } from '../lib/db';
 import { isLrcText, detectLyricsFormat, parseLrc } from '../lib/lrc';
+import { fetchOnlineLyrics } from '../lib/lyricsFetch';
 
 interface Props {
   song: Song;
@@ -30,10 +31,18 @@ export function LyricsModal({ song, currentTime, accentColor, onClose, onSeek, o
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const [saving, setSaving] = useState(false);
+  // Feature (Auto-fetch lyrics): fetches into `draft` and opens the existing
+  // edit view rather than saving directly -- an online match is a best
+  // guess (title/artist text matching, not a guaranteed identity match), so
+  // routing it through the same Save button as a manual paste lets the
+  // person glance it over -- or just tweak a line -- before it's committed.
+  const [fetching, setFetching] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     setLocalSong(song);
     setEditing(false);
+    setFetchError(null);
     // Intentionally keyed on song.id only: `song` is a new object reference
     // on every parent render (patched song objects are always shallow
     // clones), so depending on it directly would reset local edits/scroll
@@ -73,6 +82,24 @@ export function LyricsModal({ song, currentTime, accentColor, onClose, onSeek, o
   }, [activeIndex]);
 
   const startEditing = () => { setDraft(localSong.lyrics ?? ''); setEditing(true); };
+
+  const handleFetchOnline = async () => {
+    setFetching(true);
+    setFetchError(null);
+    try {
+      const result = await fetchOnlineLyrics(localSong);
+      if (!result) {
+        setFetchError("Couldn't find lyrics online for this song.");
+        return;
+      }
+      setDraft(result.text);
+      setEditing(true);
+    } catch {
+      setFetchError('Something went wrong reaching the lyrics service.');
+    } finally {
+      setFetching(false);
+    }
+  };
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -140,7 +167,7 @@ export function LyricsModal({ song, currentTime, accentColor, onClose, onSeek, o
         </div>
 
         {editing ? (
-          <div className="flex-1 min-h-0 flex flex-col gap-3 pb-[184px] md:pb-0">
+          <div className="flex-1 min-h-0 flex flex-col gap-3">
             <p className="text-white/40 text-xs leading-relaxed shrink-0">
               Paste lyrics below, or upload a .lrc / .txt file. Lines with timestamps like{' '}
               <span className="text-white/60 font-mono">[00:12.34]</span> sync automatically to playback.
@@ -177,14 +204,23 @@ export function LyricsModal({ song, currentTime, accentColor, onClose, onSeek, o
             </div>
           </div>
         ) : !localSong.lyrics ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-white/25 gap-3">
+          <div className="flex-1 flex flex-col items-center justify-center text-white/25 gap-3 px-6 text-center">
             <Mic2 size={36} className="text-white/15" />
             <p className="font-medium">No lyrics found for this song</p>
-            <button onClick={startEditing}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-opacity hover:opacity-90"
-              style={{ background: `${accentColor}20`, color: accentColor }}>
-              <Upload size={14} /> Import lyrics
-            </button>
+            <div className="flex items-center gap-2">
+              <button onClick={handleFetchOnline} disabled={fetching}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-40"
+                style={{ background: accentColor, color: '#000' }}>
+                {fetching ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
+                {fetching ? 'Searching…' : 'Search online'}
+              </button>
+              <button onClick={startEditing}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-opacity hover:opacity-90"
+                style={{ background: `${accentColor}20`, color: accentColor }}>
+                <Upload size={14} /> Import
+              </button>
+            </div>
+            {fetchError && <p className="text-red-400/70 text-xs max-w-[220px]">{fetchError}</p>}
           </div>
         ) : isLrc && lrcLines.length > 0 ? (
           <div ref={scrollAreaRef} className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1 space-y-3 py-8 pb-[184px] md:pb-8">
