@@ -48,7 +48,7 @@ interface Props {
   /** Feature (Gapless/Crossfade) */
   crossfadeSeconds: number;
   onCrossfadeChange: (seconds: number) => void;
-  /** Feature (10-band EQ + presets) */
+  /** Feature (5-band EQ + presets) */
   eq: EQState;
   onEQChange: (band: EQBandKey, db: number) => void;
   onEQPreset: (bands: EQState) => void;
@@ -351,14 +351,15 @@ export function SettingsPanel({
               <p className="text-white/30 text-xs mb-2 leading-snug">
                 Gain per band in decibels (dB) — higher boosts that range, lower cuts it.
               </p>
-              {EQ_BANDS.map(({ key, freq }) => (
+              {EQ_BANDS.map(({ key, label, freq }) => (
                 <div key={key} className="flex items-center gap-3 mb-2">
-                  <span className="text-white/50 text-xs w-9 shrink-0 text-right tabular-nums">
-                    {freq >= 1000 ? `${freq / 1000}k` : freq}
+                  <span className="text-white/50 text-xs w-16 shrink-0 leading-tight">
+                    {label}
+                    <span className="block text-white/35 text-[11px]">{freq >= 1000 ? `${freq / 1000}kHz` : `${freq}Hz`}</span>
                   </span>
                   <Slider value={eq[key]} min={EQ_MIN_DB} max={EQ_MAX_DB} step={1}
                     onChange={(v) => onEQChange(key, v)}
-                    accentColor={accentColor} ariaLabel={`${freq}Hz`} className="flex-1" />
+                    accentColor={accentColor} ariaLabel={label} className="flex-1" />
                   <span className="text-white/40 text-xs w-9 text-right tabular-nums shrink-0">{eq[key] > 0 ? '+' : ''}{eq[key]}</span>
                 </div>
               ))}

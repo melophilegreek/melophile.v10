@@ -1131,7 +1131,7 @@ export default function App() {
     savePreferences({ crossfadeSeconds: seconds });
   }, []);
 
-  // Feature (10-band EQ + presets)
+  // Feature (5-band EQ + presets)
   const handleEQChange = useCallback((band: EQBandKey, db: number) => {
     player.setEQBand(band, db);
     savePreferences({ eq: { ...player.state.eq, [band]: db } });
@@ -1378,7 +1378,7 @@ export default function App() {
 
           {/* Mobile sidebar overlay */}
           {sidebarOpen && <div className="fixed inset-0 z-40 bg-black/60 md:hidden" onClick={() => setSidebarOpen(false)} />}
-          <div className={`fixed md:relative z-[70] md:z-auto w-64 h-full md:h-auto shrink-0 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
+          <div className={`fixed md:relative z-50 md:z-auto w-64 h-full md:h-auto shrink-0 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
             <Sidebar
               currentView={view}
               onViewChange={(v) => { setView(v); setQuery(''); setSidebarOpen(false); }}
@@ -1729,8 +1729,6 @@ export default function App() {
             sleepTimerEndsAt={playerState.sleepTimerEndsAt}
             sleepTimerEndOfTrack={playerState.sleepTimerEndOfTrack}
             onSetSleepTimer={(m) => player.setSleepTimer(m)}
-            repeat={playerState.repeat}
-            onRepeatChange={(mode) => player.setRepeat(mode)}
             playbackRate={playerState.playbackRate}
             preservePitch={playerState.preservePitch}
             onSetPlaybackRate={(r) => { player.setPlaybackRate(r); savePreferences({ playbackRate: r }); }}

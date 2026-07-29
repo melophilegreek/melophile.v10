@@ -22,7 +22,7 @@ export interface PlayerState {
    *  gapless-only (no overlap, but the next track's audio blob is still
    *  prefetched ahead of time so there's no IndexedDB-read gap). */
   crossfadeSeconds: number;
-  /** Feature (10-band EQ): gain in dB per band, applied via a small Web
+  /** Feature (5-band EQ): gain in dB per band, applied via a small Web
    *  Audio filter chain shared by both underlying <audio> elements. */
   eq: EQState;
   /** Feature (Sleep timer): epoch ms the timer will fire at, or null if a
@@ -528,7 +528,7 @@ class Player {
     this._applyPlaybackSettings(this.audioB);
   }
 
-  // ── Feature (10-band EQ + presets) ─────────────────────────────────────────
+  // ── Feature (5-band EQ + presets) ─────────────────────────────────────────
   setEQBand(band: EQBandKey, db: number) {
     const clamped = clampEQ(db);
     this._ensureAudioGraph();
@@ -537,7 +537,7 @@ class Player {
     if (filter) filter.gain.value = clamped;
     this._patch({ eq: { ...this._state.eq, [band]: clamped } });
   }
-  /** Applies a full 10-band curve at once -- used both for restoring saved
+  /** Applies a full 5-band curve at once -- used both for restoring saved
    *  preferences on load and for one-tap presets (Bass Boost, Rock, etc). */
   setEQAll(eq: EQState) {
     this._ensureAudioGraph();
