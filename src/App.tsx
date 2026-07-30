@@ -1378,7 +1378,19 @@ export default function App() {
 
           {/* Mobile sidebar overlay */}
           {sidebarOpen && <div className="fixed inset-0 z-40 bg-black/60 md:hidden" onClick={() => setSidebarOpen(false)} />}
-          <div className={`fixed md:relative z-50 md:z-auto w-64 h-full md:h-auto shrink-0 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
+          {/* FIX (Settings hidden behind mobile Player Bar): the mobile drawer
+              used to be `fixed ... h-full`, i.e. full viewport height, while
+              the Player Bar sits in normal flow at the bottom with a higher
+              z-index (z-[60] vs the sidebar's z-50) so it can stay above the
+              Queue overlay. That combination meant the last ~176px of the
+              drawer -- exactly where "Metadata Health" and "Settings" live --
+              rendered underneath the Player Bar and was unreachable/invisible
+              on mobile. Anchoring the drawer with `top-0 bottom-[176px]`
+              instead of `h-full` stops it right above the mobile Player Bar's
+              176px band (desktop's `md:relative` layout ignores these
+              top/bottom values), so the whole nav list including Settings
+              scrolls into view above the bar instead of behind it. */}
+          <div className={`fixed md:relative top-0 bottom-[176px] md:bottom-auto z-50 md:z-auto w-64 md:h-auto shrink-0 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
             <Sidebar
               currentView={view}
               onViewChange={(v) => { setView(v); setQuery(''); setSidebarOpen(false); }}
