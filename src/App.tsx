@@ -1378,19 +1378,20 @@ export default function App() {
 
           {/* Mobile sidebar overlay */}
           {sidebarOpen && <div className="fixed inset-0 z-40 bg-black/60 md:hidden" onClick={() => setSidebarOpen(false)} />}
-          {/* FIX (Settings hidden behind mobile Player Bar): the mobile drawer
-              used to be `fixed ... h-full`, i.e. full viewport height, while
-              the Player Bar sits in normal flow at the bottom with a higher
-              z-index (z-[60] vs the sidebar's z-50) so it can stay above the
-              Queue overlay. That combination meant the last ~176px of the
-              drawer -- exactly where "Metadata Health" and "Settings" live --
-              rendered underneath the Player Bar and was unreachable/invisible
-              on mobile. Anchoring the drawer with `top-0 bottom-[176px]`
-              instead of `h-full` stops it right above the mobile Player Bar's
-              176px band (desktop's `md:relative` layout ignores these
-              top/bottom values), so the whole nav list including Settings
-              scrolls into view above the bar instead of behind it. */}
-          <div className={`fixed md:relative top-0 bottom-[176px] md:bottom-auto z-50 md:z-auto w-64 md:h-auto shrink-0 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
+          {/* FIX (Settings hidden behind mobile Player Bar): the Player Bar
+              sits in normal flow at the bottom with z-[60] (needed so it
+              stays above the Queue overlay's z-50 backdrop). The drawer used
+              to be z-50, so on mobile the Player Bar rendered on top of it and
+              covered "Metadata Health"/"Settings" at the bottom of the nav
+              list. Rather than shrinking the drawer to dodge the bar (which
+              left the bar visible/tappable behind an open drawer -- not what
+              was wanted), the drawer now goes full-height again (`h-full`)
+              and outranks the bar with `z-[70]` on mobile, so opening the menu
+              covers the whole screen -- Player Bar included -- and every nav
+              item is reachable. Desktop keeps its own stacking (`md:z-auto`)
+              since the sidebar there is a normal in-flow column, not an
+              overlay. */}
+          <div className={`fixed md:relative z-[70] md:z-auto w-64 h-full md:h-auto shrink-0 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
             <Sidebar
               currentView={view}
               onViewChange={(v) => { setView(v); setQuery(''); setSidebarOpen(false); }}
