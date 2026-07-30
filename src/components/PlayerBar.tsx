@@ -362,12 +362,12 @@ function PlaybackSpeedMenu({ accentColor, rate, preservePitch, onSetRate, onSetP
 // expanded player. Reuses the same portal/positioning pattern as the other
 // popovers here.
 function PlayerOptionsMenu({
-  accentColor, hasLyrics, hasSong, onOpenLyrics,
+  accentColor,
   rate, preservePitch, onSetRate, onSetPreservePitch,
   sleepEndsAt, sleepEndOfTrack, onSetSleepTimer,
   align,
 }: {
-  accentColor: string; hasLyrics: boolean; hasSong: boolean; onOpenLyrics: () => void;
+  accentColor: string;
   rate: number; preservePitch: boolean;
   onSetRate: (r: number) => void; onSetPreservePitch: (p: boolean) => void;
   sleepEndsAt: number | null; sleepEndOfTrack: boolean;
@@ -464,15 +464,6 @@ function PlayerOptionsMenu({
           className="fixed w-56 rounded-xl overflow-hidden shadow-2xl border border-white/10 z-50 animate-fade-in max-h-[80vh] overflow-y-auto"
           style={{ top: menuPos.top, left: menuPos.left, background: 'linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0) 30%), rgba(22,22,25,0.96)', backdropFilter: 'blur(16px)' }}>
           <div className="p-1">
-            {/* Lyrics */}
-            <button onClick={() => { onOpenLyrics(); setOpen(false); }} disabled={!hasSong}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-white/75 hover:bg-white/10 transition-colors disabled:opacity-30 disabled:hover:bg-transparent">
-              <Mic2 size={14} />
-              {hasLyrics ? 'Lyrics' : 'Import lyrics'}
-            </button>
-
-            <div className="h-px bg-white/10 my-1" />
-
             {/* Playback speed */}
             <div className="px-3 pt-1.5 pb-1 flex items-center gap-1.5 text-xs text-white/40">
               <Gauge size={12} /> Playback speed
@@ -625,12 +616,17 @@ export function PlayerBar({
             ) : <p className="text-white/25 text-sm">Nothing playing</p>}
           </div>
           <div className="flex items-center gap-1 shrink-0">
-            {/* Feature (Combined options button): lyrics + playback speed +
-                sleep timer now live behind one "more options" button instead
-                of three separate icons, matching the simplified top-right
-                corner of the mobile expanded player. */}
+            {/* Lyrics gets its own button (previously buried inside the
+                combined "more options" menu below, which made it a couple
+                extra taps away). Playback speed + sleep timer still share
+                that one menu. */}
+            <button onClick={onOpenLyrics} disabled={!currentSong}
+              className="btn-icon w-8 h-8 hover:bg-white/10 rounded-lg disabled:opacity-30 disabled:hover:bg-transparent"
+              title={hasLyrics ? 'Lyrics' : 'Import lyrics'}>
+              <Mic2 size={16} style={{ color: hasLyrics ? accentColor : 'rgba(255,255,255,0.6)' }} />
+            </button>
             <PlayerOptionsMenu
-              accentColor={accentColor} hasLyrics={hasLyrics} hasSong={!!currentSong} onOpenLyrics={onOpenLyrics}
+              accentColor={accentColor}
               rate={playbackRate} preservePitch={preservePitch} onSetRate={onSetPlaybackRate} onSetPreservePitch={onSetPreservePitch}
               sleepEndsAt={sleepTimerEndsAt} sleepEndOfTrack={sleepTimerEndOfTrack} onSetSleepTimer={onSetSleepTimer}
               align="left"
