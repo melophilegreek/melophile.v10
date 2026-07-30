@@ -151,14 +151,14 @@ export function SettingsPanel({
     if (/^#[0-9a-fA-F]{6}$/.test(n)) setDraftColor(n);
   };
 
+  // FIX (bottom of Settings hidden behind the Player Bar): the Player Bar
+  // wrapper in App.tsx is deliberately `z-[60]` so it renders above the
+  // Queue overlay's z-50 backdrop. That same rule was covering the bottom
+  // of this modal too, since it also sat at z-50 -- the modal still
+  // scrolled underneath, but the opaque bar blocked the last section from
+  // view/reach. Bumping this above z-[60] fixes it without touching the
+  // Queue's intentional layering.
   return (
-    {/* FIX (bottom of Settings hidden behind the Player Bar): the Player Bar
-        wrapper in App.tsx is deliberately `z-[60]` so it renders above the
-        Queue overlay's z-50 backdrop. That same rule was covering the bottom
-        of this modal too, since it also sat at z-50 -- the modal still
-        scrolled underneath, but the opaque bar blocked the last section from
-        view/reach. Bumping this above z-[60] fixes it without touching the
-        Queue's intentional layering. */}
     <div ref={overlayRef} className="fixed inset-0 z-[70] flex items-center justify-center px-4"
       style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}
       onMouseDown={(e) => { if (e.target === overlayRef.current) onClose(); }}>
