@@ -1403,8 +1403,17 @@ export default function App() {
               onCreatePlaylist={() => setShowNewPlaylist(true)}
               onCreateSmartPlaylist={() => setShowNewSmartPlaylist(true)}
               onDeletePlaylist={requestDeletePlaylist}
-              onOpenSettings={() => setShowSettings(true)}
-              onOpenHealthCheck={() => setShowHealthCheck(true)}
+              /* FIX (Settings/Metadata Health opening behind the still-open
+                  drawer): these two nav items are outside the normal
+                  onViewChange path, which is the only place that was closing
+                  sidebarOpen. So tapping "Settings" opened the panel but left
+                  the mobile drawer sitting on top of it -- and since the
+                  drawer is only w-64 wide, the Player Bar (higher z-index
+                  than the dimming backdrop) kept peeking through on the
+                  uncovered right side too. Closing the drawer here mirrors
+                  what onViewChange already does for every other nav item. */
+              onOpenSettings={() => { setShowSettings(true); setSidebarOpen(false); }}
+              onOpenHealthCheck={() => { setShowHealthCheck(true); setSidebarOpen(false); }}
             />
           </div>
 
