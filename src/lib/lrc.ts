@@ -11,6 +11,19 @@ const LRC_LINE = /\[(\d{1,2}):(\d{2})(?:\.(\d{1,3}))?\]/g;
 // lastIndex in a bad state across calls.
 const LRC_LINE_PROBE = /\[(\d{1,2}):(\d{2})(?:\.(\d{1,3}))?\]/;
 
+// BUG FIX (metadata tags rendered as lyric lines): standard LRC files carry
+// an ID-tag header -- [ti:Title], [ar:Artist], [al:Album], [by:Whoever],
+// [length:mm:ss], [tool:...], [offset:...], [re:...], [ve:...], [au:...] --
+// none of which are timestamps, so LRC_LINE above never matches them. Before
+// this fix, a line like that fell through as "no timestamp found", so its
+// whole bracketed tag was kept as literal lyric text and pinned to time 0 --
+// which is why every synced lyric view opened with a wall of tags like
+// "[ti:Aagaayam]" sitting above the actual first line. This matches a whole
+// line consisting of exactly one `[key:value]` tag (key = letters only, so a
+// genuine timestamp bracket like [00:14.54] is never mistaken for one) and
+// drops it entirely.
+const LRC_METADATA_LINE = /^\s*\[[a-zA-Z#]+:[^\]]*\]\s*$/;
+
 /** Does this text contain at least one `[mm:ss.xx]`-style timestamp
  *  anywhere? Intentionally not anchored to line start -- lyrics pasted,
  *  uploaded, or embedded by different taggers vary too much in leading
@@ -39,6 +52,7 @@ export function parseLrc(raw: string): LrcLine[] {
   const lines: LrcLine[] = [];
   let lastTime = 0;
   for (const rawLine of raw.split('\n')) {
+    if (LRC_METADATA_LINE.test(rawLine)) continue;
     const matches = Array.from(rawLine.matchAll(LRC_LINE));
     const text = rawLine.replace(LRC_LINE, '').trim();
     if (matches.length === 0) {
