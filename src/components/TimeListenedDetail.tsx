@@ -147,8 +147,18 @@ export function TimeListenedDetail({ sessions, accentColor, onClose }: Props) {
         )}
       </div>
 
+      {/* FIX (bottom of the list unreachable behind the Player Bar): this
+          screen and the fixed mobile Player Bar wrapper in App.tsx are both
+          z-[60], so with equal stacking the bar (rendered later in the DOM)
+          sits on top. The lists only had pb-8 (32px) of bottom padding --
+          nowhere near the player bar's 180px mobile height -- so the last
+          items were scrollable in theory but permanently hidden underneath
+          it. pb-[184px] matches the convention already used for this in
+          LyricsModal/QueuePanel to clear the bar on mobile; md:pb-8 keeps
+          the original spacing on desktop, where the bar is only 68px tall
+          and sits below the content column instead of overlapping it. */}
       {showHistory ? (
-        <div className="flex-1 overflow-y-auto px-4 pb-8">
+        <div className="flex-1 overflow-y-auto px-4 pb-[184px] md:pb-8">
           <p className="text-white/30 text-xs mb-3 px-1">Every month since you started listening</p>
           <div className="space-y-1">
             {monthHistory.map(({ year: histYear, month: histMonth, totalMin }) => {
@@ -165,7 +175,7 @@ export function TimeListenedDetail({ sessions, accentColor, onClose }: Props) {
           </div>
         </div>
       ) : (
-      <div className="flex-1 overflow-y-auto px-5 pb-8">
+      <div className="flex-1 overflow-y-auto px-5 pb-[184px] md:pb-8">
         {/* Month selector */}
         <div className="flex items-center gap-2 mb-5">
           <button onClick={() => canGoBack && setMonthOffset((o) => o - 1)}
