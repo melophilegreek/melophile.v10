@@ -164,7 +164,17 @@ export function SettingsPanel({
       onMouseDown={(e) => { if (e.target === overlayRef.current) onClose(); }}>
       <div className="w-full max-w-sm max-h-[85vh] overflow-y-auto rounded-2xl p-6 shadow-2xl animate-slide-up"
         style={{ background: 'rgba(28,28,28,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }}>
-        <div className="flex items-center justify-between mb-5">
+        {/* FIX (close button disappears on scroll): this header used to be a
+            plain child inside the same overflow-y-auto container as the rest
+            of the settings content, so scrolling down carried the X button
+            (and title) up and out of view along with everything else.
+            Pinning it with `sticky top-0` keeps it fixed to the top of the
+            modal's scroll area; the negative margins/matching padding bleed
+            its background to the card's edges (canceling out the card's own
+            p-6 padding just for this row) so scrolled content doesn't peek
+            out from behind it. */}
+        <div className="sticky -top-6 -mx-6 -mt-6 px-6 pt-6 pb-4 mb-1 z-10 flex items-center justify-between"
+          style={{ background: 'rgba(28,28,28,0.98)', backdropFilter: 'blur(20px)' }}>
           <h2 className="text-white font-bold text-xl">Settings</h2>
           <button onClick={onClose} className="btn-icon w-8 h-8 hover:bg-white/10 rounded-full">
             <X size={18} className="text-white/60" />
